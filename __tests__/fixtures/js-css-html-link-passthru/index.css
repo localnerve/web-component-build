@@ -1,0 +1,8 @@
+:root {
+  --some-var: 1;
+  position: relative;
+}
+.something {
+  display: flex;
+  flex-flow: row nowrap;
+}

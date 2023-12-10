@@ -1,0 +1,64 @@
+{
+  "name": "@localnerve/web-component-build",
+  "version": "0.1.0",
+  "description": "A library to help build web components",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    "import": "./index.js",
+    "default": "./index.js"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:debug": "node --experimental-vm-modules --inspect-brk node_modules/jest/bin/jest.js"
+  },
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/localnerve/web-component-build.git"
+  },
+  "keywords": [
+    "web-components",
+    "web components",
+    "web",
+    "component",
+    "build",
+    "build tool",
+    "library"
+  ],
+  "author": {
+    "name": "Alex Grant",
+    "email": "alex@localnerve.com",
+    "url": "https://www.localnerve.com"
+  },
+  "maintainers": [
+    {
+      "name": "Alex Grant",
+      "email": "alex@localnerve.com",
+      "url": "https://www.localnerve.com"
+    }
+  ],
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/localnerve/web-component-build/issues"
+  },
+  "homepage": "https://github.com/localnerve/web-component-build#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "clean-css": "^5.3.3",
+    "html-minifier": "^4.0.0",
+    "terser": "^5.26.0"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.23.5",
+    "eslint": "^8.55.0",
+    "jest": "^29.7.0",
+    "tempy": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

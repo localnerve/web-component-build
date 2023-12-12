@@ -81,7 +81,6 @@ async function loadFixtures () {
         fixtures[key].jsReplacement = fileContent.includes(jsReplacementToken);
       }
       fixtures[key].types.push(type);
-      fixtures[key].key = key;
       fixtures[key][type] = {
         filePath,
         fileContent
@@ -96,9 +95,9 @@ async function loadFixtures () {
  * Create the array of test spec objects. spec objects:
  * {
  *   name {String} The name of the fixture
- *   jsPath {String} The full path to the js fixture file
  *   outputDir {String} The outputDir for the test results
  *   options: {
+ *     jsPath {String} The full path to the js fixture file
  *     cssPath {String} The full path to the css fixture file
  *     htmlPath {String} The full path to the html fixture file
  *     cssLinkHref {String} The href to a css resource
@@ -108,6 +107,9 @@ async function loadFixtures () {
  *     css {String}
  *     js {String}
  *     html {String}
+ *     cssPath {String}
+ *     jsPath {String}
+ *     htmlPath {String}
  *   }
  * }
  * @param {Object} fixtures - The object of fixtures.
@@ -139,12 +141,16 @@ async function makeSpecs (fixtures, outputDirBase) {
     }
 
     if (fixture.types.includes('js')) {
-      spec.jsPath = fixture.js.filePath;
+      spec.options.jsPath = fixture.js.filePath;
+      spec.output.jsPath =
+        path.join(outputDir, path.basename(fixture.js.filePath));
     }
   
     if (fixture.types.includes('css')) {
       spec.options.cssPath = fixture.css.filePath;
       spec.output.css = await fixture.minifiers.css(fixture.css.fileContent);
+      spec.output.cssPath =
+        path.join(outputDir, path.basename(fixture.css.filePath));
     }
   
     if (fixture.types.includes('link')) {
@@ -163,6 +169,8 @@ async function makeSpecs (fixtures, outputDirBase) {
         $('body').prepend(link);
       }
       spec.output.html = await fixture.minifiers.html($('body').html());
+      spec.output.htmlPath =
+        path.join(outputDir, path.basename(fixture.html.filePath));
     }
 
     if (fixture.jsReplacement) {
@@ -185,9 +193,11 @@ async function makeSpecs (fixtures, outputDirBase) {
       }
     }
 
-    spec.output.js = await fixture.minifiers.js(
-      jsStage || fixture.js.fileContent
-    );
+    if (fixture.types.includes('js')) {
+      spec.output.js = await fixture.minifiers.js(
+        jsStage || fixture.js.fileContent
+      );
+    }
 
     specs.push(spec);
   }
@@ -203,12 +213,48 @@ describe('web-component-build', () => {
     await fs.rm(outputDir, { recursive: true, force: true });
   });
 
-  test.each(specs)('$name', async ({
-    jsPath, outputDir, options, output
+  test.concurrent.each(specs)('$name', async ({
+    name, outputDir, options, output
   }) => {
-    const result = await build(jsPath, outputDir, options);
-    expect(await result.getCssText()).toEqual(output.css);
-    expect(await result.getHtmlText()).toEqual(output.html);
-    expect(await result.getJsText()).toEqual(output.js);
+    let result;
+    try {
+      result = await build(outputDir, options);
+    } catch (e) {
+      if (name !== 'bad-input') {
+        throw e;
+      } else {
+        return;
+      }
+    }
+
+    const [css, html, js] = await Promise.all([
+      result.getCss(),
+      result.getHtml(),
+      result.getJs()
+    ]);
+    
+    expect(css).toEqual(output.css);
+    expect(html).toEqual(output.html);
+    expect(js).toEqual(output.js);
+
+    if (name.includes('js')) {
+      expect(js).toBeDefined();
+    } else {
+      expect(js).toBeUndefined();
+    }
+    if (name.includes('css')) {
+      expect(css).toBeDefined();
+    } else {
+      expect(css).toBeUndefined();
+    }
+    if (name.includes('html')) {
+      expect(html).toBeDefined();
+    } else {
+      expect(html).toBeUndefined();
+    }
+
+    expect(result.cssPath).toEqual(output.cssPath);
+    expect(result.htmlPath).toEqual(output.htmlPath);
+    expect(result.jsPath).toEqual(output.jsPath);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "@localnerve/web-component-build",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A library to help build web components",
   "main": "index.js",
   "type": "module",
@@ -21,13 +21,12 @@
     "url": "git+https://github.com/localnerve/web-component-build.git"
   },
   "keywords": [
-    "web-components",
+    "minifier",
     "web components",
     "web",
     "component",
     "build",
-    "build tool",
-    "library"
+    "build tool"
   ],
   "author": {
     "name": "Alex Grant",

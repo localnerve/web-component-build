@@ -4,7 +4,7 @@
 
 This library assembles a web component from its parts, allowing developers to author the component's parts in separate files. The parts are processed and written to an output directory. After processing, this library exposes the parts to a calling build process.  
 
-The following is a table of the possible input, processing, and output combos:
+The following is a table of _some_ of the possible input, processing, and output combos. See [options](#options) for detailed explanation of the processing input.
 
 | input | processing | output |
 | ----- | ---------- | ------ |
@@ -25,7 +25,7 @@ The following is a table of the possible input, processing, and output combos:
 
 ```javascript
   // Sample usage with most optional options specified
-  import {build} from 'web-component-build';
+  import {build} from '@localnerve/web-component-build';
   const outputDir = 'some/path/output';
 
   const result = await build(outputDir, {
@@ -38,7 +38,7 @@ The following is a table of the possible input, processing, and output combos:
     htmlminOptions: { /* html-minifier options */ },
     cleancssOptions: { /* clean-css options */ }
   });
-  // output written to `outputDir`
+  // html, js, and css file output written to `outputDir`
   
   // retrieve processed content
   const [js, css, html] = await Promise.all([
@@ -49,16 +49,55 @@ The following is a table of the possible input, processing, and output combos:
   const [jsPath, cssPath, htmlPath] = [result.jsPath, result.cssPath, result.htmlPath];
 ```
 
-## Input
-* `outputDir` {String} - Full path to the output directory
+## API
+This library exports a single function that takes an output directory and processing options.
+```
+build (outputDir, options)
+```
+`outputDir` {String} - Full path to the output directory where css, html, and javascript output are written.
 
 ### Options
-* `cssPath` {String} - Full path to the input css file
-* `cssLinkHref` {String} - link href to a stylesheet resource to be referenced by the web component
+One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They have no default, so if no options are supplied, this library throws an exception.  
+
+* `cssPath` {String} - Full path to the input css file  
+  If supplied:  
+    + css will be minified using `cleancssOptions`
+    + css will be wrapped in a `style` tag
+    + css will be inserted into the javascript file if `jsReplacement` and `jsPath` are supplied and no `htmlPath` supplied
+    + css will be prepended to the html file if `htmlPath` is supplied
+* `cssLinkHref` {String} - link href to a stylesheet resource to be referenced by the web component  
+  If supplied:
+    + href will be wrapped in a `link` tag
+    + resulting `link` will be prepended to the html file if `htmlPath` supplied
+    + resulting `link` will be inserted into the javascript file if no `htmlPath` supplied and `jsReplacement` and `jsPath` supplied  
+* `htmlPath` {String} - Full path to the input html file  
+  If supplied:  
+    + css will be prepended in a `style` tag
+    + cssLinkHref will be prepended in a `link` tag
+    + html will be inserted into the javascript file if `jsReplacement` and `jsPath` is supplied  
 * `jsPath` {String} - Full path to the input javascript file
-* `htmlPath` {String} - Full path to the input html file
-* `jsReplacement` {String} - The token to replace with the css or html in the javascript file
-* `terserOptions` {Object} - The terser options object
-* `htmlminOptions` {Object} - The html-minifier options object
-* `cleancssOptions` {Object} - The clean-css options object
-* `minifySkip` {Boolean} - True to skip all minification, defaults to false
+* `jsReplacement` {String} - The token to replace with the css or html in the javascript file  
+  If supplied:
+    + A replacement will be attempted in the javascript file
+    + If **not supplied** or falsy, No replacement will be attempted and all assets are just copied to `outputDir`       
+* `terserOptions` {Object} - The [javascript minifier options](https://github.com/terser/terser/blob/master/README.md#minify-options) object  
+  Defaults:
+  ```
+  {
+    ecma: 2022
+  }
+  ```
+* `htmlminOptions` {Object} - The [html minifier options](https://github.com/kangax/html-minifier/blob/gh-pages/README.md#options-quick-reference) object  
+  Defaults:  
+  ```
+  {
+    minifyJS: true,
+    minifyCSS: true,
+    collapseWhitespace: true,
+    removeAttributeQuotes: true,
+    removeComments: true
+  }
+  ```
+* `cleancssOptions` {Object} - The [css minifier options](https://github.com/clean-css/clean-css/blob/master/README.md#constructor-options) object  
+  Defaults (same as `clean-css` defaults)  
+* `minifySkip` {Boolean} - True to skip all minifications, defaults to false

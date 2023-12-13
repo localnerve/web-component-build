@@ -2,6 +2,10 @@
 
 > Assembles a web component from css, html, and js parts
 
+[![npm version](https://badge.fury.io/js/@localnerve%2Fweb-component-build.svg)](https://badge.fury.io/js/@localnerve%2Fweb-component-build)
+![Verify](https://github.com/localnerve/web-component-build/workflows/Verify/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/localnerve/web-component-build/badge.svg?branch=main)](https://coveralls.io/github/localnerve/web-component-build?branch=main)
+
 This library assembles a web component from its parts, allowing developers to author the component's parts in separate files. The parts are processed and written to an output directory. After processing, this library exposes the parts to a calling build process.  
 
 The following is a table of _some_ of the possible input, processing, and output combos. See [options](#options) for detailed explanation of the processing input.

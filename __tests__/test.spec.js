@@ -238,6 +238,13 @@ describe('web-component-build', () => {
       result.getJs()
     ]);
     
+    // compare html embedded css with css fragment
+    if (html) {
+      const m = /<style>(?<htmlcss>[^<]+)/mg.exec(html);
+      const htmlcss = m?.groups?.htmlcss;
+      expect(htmlcss).toEqual(css);
+    }
+
     expect(css).toEqual(output.css);
     expect(html).toEqual(output.html);
     expect(js).toEqual(output.js);

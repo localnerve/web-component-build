@@ -213,6 +213,12 @@ describe('web-component-build', () => {
     await fs.rm(outputDir, { recursive: true, force: true });
   });
 
+  test('no args', async () => {
+    await expect(async () => {
+      await build();
+    }).rejects.toThrow('Did you forget something');
+  });
+
   test.concurrent.each(specs)('$name', async ({
     name, outputDir, options, output
   }) => {
@@ -220,11 +226,10 @@ describe('web-component-build', () => {
     try {
       result = await build(outputDir, options);
     } catch (e) {
-      if (name !== 'bad-input') {
-        throw e;
-      } else {
+      if (name === 'bad-input') {
         return;
       }
+      throw e;
     }
 
     const [css, html, js] = await Promise.all([

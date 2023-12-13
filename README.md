@@ -12,7 +12,9 @@ The following is a table of _some_ of the possible input, processing, and output
 
 | input | processing | output |
 | ----- | ---------- | ------ |
-| javascript | minify or optional pass-thru | javascript |
+| javascript | minify javascript | javascript |
+| css | minify css | css |
+| html | minify html | html |
 | css, html | minify css, prepend style tag to html, minify html | css, html |
 | css, html, cssHref | minfy css, prepend style tag to html, prepend link tag to html, minify html | css, html |
 | cssHref, html | prepend link tag to html, minify html | html |
@@ -80,7 +82,7 @@ One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They
     + cssLinkHref will be prepended in a `link` tag
     + html will be inserted into the javascript file if `jsReplacement` and `jsPath` is supplied  
 * `jsPath` {String} - Full path to the input javascript file
-* `jsReplacement` {String} - The token to replace with the css or html in the javascript file  
+* `jsReplacement` {String|RegExp} - The replacement pattern for the css or html in the javascript file. See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern) for full documentation  
   If supplied:
     + A replacement will be attempted in the javascript file
     + If **not supplied** or falsy, No replacement will be attempted and all assets are just copied to `outputDir`       

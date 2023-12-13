@@ -101,3 +101,6 @@ One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They
 * `cleancssOptions` {Object} - The [css minifier options](https://github.com/clean-css/clean-css/blob/master/README.md#constructor-options) object  
   Defaults (same as `clean-css` defaults)  
 * `minifySkip` {Boolean} - True to skip all minifications, defaults to false
+
+## License
+  * [BSD-3 Clasuse, Alex Grant, LocalNerve](LICENSE.md)

@@ -13,7 +13,7 @@ import {minify as minifyHtml} from 'html-minifier';
 import {minify as minifyJs} from 'terser';
 import * as cheerio from 'cheerio';
 import {temporaryDirectory} from 'tempy';
-import {build} from '../lib/index.js';
+import {build} from '../index.js';
 
 const jsReplacementToken = '__JS_REPLACEMENT__';
 const thisDir = url.fileURLToPath(new URL('.', import.meta.url));

@@ -8,7 +8,7 @@
 
 This library assembles a web component from its parts, allowing developers to author the component's parts in separate files. The parts are processed and written to an output directory. After processing, this library exposes the parts to a calling build process.  
 
-The following is a table of _some_ of the possible input, processing, and output combos. See [options](#options) for detailed explanation of the processing input.
+The following is a table of _some_ of the possible input, processing, and output combos. See [options](#options) for detailed explanation of the input.
 
 | input | processing | output |
 | ----- | ---------- | ------ |
@@ -58,12 +58,14 @@ The following is a table of _some_ of the possible input, processing, and output
 ## API
 This library exports a single function that takes an output directory and processing options.
 ```
-build (outputDir, options)
+build (outputDir, options): Result
 ```
-`outputDir` {String} - Full path to the output directory where css, html, and javascript output are written.
 
-### Options
-One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They have no default, so if no options are supplied, this library throws an exception.  
+### outputDir {String}, required
+Full path to the output directory where css, html, and javascript output are written.
+
+### Options {Object}, optional*
+\* Not really. One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They have no default, so if no options are supplied, this library throws an exception.  
 
 * `cssPath` {String} - Full path to the input css file  
   If supplied:  
@@ -71,28 +73,33 @@ One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They
     + css will be wrapped in a `style` tag
     + css will be inserted into the javascript file if `jsReplacement` and `jsPath` are supplied and no `htmlPath` supplied
     + css will be prepended to the html file if `htmlPath` is supplied
+  
 * `cssLinkHref` {String} - link href to a stylesheet resource to be referenced by the web component  
   If supplied:
     + href will be wrapped in a `link` tag
     + resulting `link` will be prepended to the html file if `htmlPath` supplied
     + resulting `link` will be inserted into the javascript file if no `htmlPath` supplied and `jsReplacement` and `jsPath` supplied  
+  
 * `htmlPath` {String} - Full path to the input html file  
   If supplied:  
     + css will be prepended in a `style` tag
     + cssLinkHref will be prepended in a `link` tag
     + html will be inserted into the javascript file if `jsReplacement` and `jsPath` is supplied  
+  
 * `jsPath` {String} - Full path to the input javascript file
 * `jsReplacement` {String|RegExp} - The replacement pattern for the css or html in the javascript file. See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern) for full documentation  
   If supplied:
     + A replacement will be attempted in the javascript file
-    + If **not supplied** or falsy, No replacement will be attempted and all assets are just copied to `outputDir`       
+    + If **not supplied** or falsy, No replacement will be attempted and all assets are just copied to `outputDir`  
+  
 * `terserOptions` {Object} - The [javascript minifier options](https://github.com/terser/terser/blob/master/README.md#minify-options) object  
   Defaults:
   ```
   {
     ecma: 2022
   }
-  ```
+  ```  
+  
 * `htmlminOptions` {Object} - The [html minifier options](https://github.com/kangax/html-minifier/blob/gh-pages/README.md#options-quick-reference) object  
   Defaults:  
   ```
@@ -103,10 +110,27 @@ One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They
     removeAttributeQuotes: true,
     removeComments: true
   }
-  ```
+  ```  
+  
 * `cleancssOptions` {Object} - The [css minifier options](https://github.com/clean-css/clean-css/blob/master/README.md#constructor-options) object  
   Defaults (same as `clean-css` defaults)  
-* `minifySkip` {Boolean} - True to skip all minifications, defaults to false
+  
+* `minifySkip` {Boolean} - True to skip all minifications, defaults to false  
 
+### Result {Object}
+The output of the build process. Allows access to the output paths and full output content. Format:  
+  
+  + cssPath {String}, The full path to the output css  
+  
+  + htmlPath {String}, The full path to the output html  
+  
+  + jsPath {String}, The full path to the output javascript  
+  
+  + getCss {asyncFunction}, gets the output css  
+  
+  + getHtml {asyncFunction}, gets the output html  
+  
+  + getJs {asyncFunction}, gets the output javascript  
+  
 ## License
   * [BSD-3 Clasuse, Alex Grant, LocalNerve](LICENSE.md)

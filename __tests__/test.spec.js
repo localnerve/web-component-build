@@ -219,6 +219,15 @@ describe('web-component-build', () => {
     }).rejects.toThrow('Did you forget something');
   });
 
+  test('jsReplacement without jsPath', async () => {
+    await expect(async () => {
+      await build('some/path', {
+        cssPath: 'some/path/to/file.css',
+        jsReplacement: 'somereplacement'
+      });
+    }).rejects.toThrow('Did you forget \'jsPath\'');
+  });
+
   test.concurrent.each(specs)('$name', async ({
     name, outputDir, options, output
   }) => {
@@ -226,7 +235,7 @@ describe('web-component-build', () => {
     try {
       result = await build(outputDir, options);
     } catch (e) {
-      if (name === 'bad-input') {
+      if (name.includes('bad-input')) {
         return;
       }
       throw e;

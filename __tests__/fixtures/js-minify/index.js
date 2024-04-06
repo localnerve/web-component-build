@@ -1,7 +1,7 @@
 /**
  * js-minify
  */
-/* eslint-env browser */
+
 class SomeComponent extends HTMLElement {
   constructor () {
     super();

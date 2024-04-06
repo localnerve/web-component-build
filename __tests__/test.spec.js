@@ -4,7 +4,6 @@
  * Copyright (c) 2023 - 2024 Alex Grant (@localnerve), LocalNerve LLC
  * Copyrights licensed under the BSD License. See the accompanying LICENSE file for terms.
  */
-/* eslint-env jest */
 import * as url from 'node:url';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';

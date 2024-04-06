@@ -3,7 +3,6 @@
  * 
  * replace css in html in js
  */
-/* eslint-env browser */
 
 class SomeComponent extends HTMLElement {
   constructor () {

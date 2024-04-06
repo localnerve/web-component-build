@@ -1,7 +1,7 @@
 /**
  * js-passthru
  */
-/* eslint-env browser */
+
 class SomeComponent extends HTMLElement {
   constructor () {
     super();

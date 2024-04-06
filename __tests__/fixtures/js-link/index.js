@@ -2,7 +2,6 @@
  * js-link
  * replace link in js
  */
-/* eslint-env browser */
 
 class SomeComponent extends HTMLElement {
   constructor () {

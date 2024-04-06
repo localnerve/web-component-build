@@ -2,7 +2,6 @@
  * js-css
  * replace css in js
  */
-/* eslint-env browser */
 
 class SomeComponent extends HTMLElement {
   constructor () {

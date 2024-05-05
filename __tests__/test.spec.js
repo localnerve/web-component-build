@@ -8,7 +8,7 @@ import * as url from 'node:url';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import CleanCss from 'clean-css';
-import {minify as minifyHtml} from 'html-minifier';
+import {minify as minifyHtml} from 'html-minifier-terser';
 import {minify as minifyJs} from 'terser';
 import * as cheerio from 'cheerio';
 import {temporaryDirectory} from 'tempy';

@@ -116,7 +116,7 @@ Full path to the output directory where css, html, and javascript output are wri
   }
   ```  
   
-* **htmlminOptions** {Object} - The [html minifier options](https://github.com/kangax/html-minifier/blob/gh-pages/README.md#options-quick-reference) object  
+* **htmlminOptions** {Object} - The [html minifier options](https://github.com/terser/html-minifier-terser?tab=readme-ov-file#options-quick-reference) object  
   Defaults:  
   ```
   {

@@ -1,6 +1,6 @@
 {
   "name": "@localnerve/web-component-build",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "A library to help build web components",
   "main": "index.js",
   "type": "module",
@@ -49,7 +49,7 @@
     "cheerio": "^1.0.0",
     "clean-css": "^5.3.3",
     "html-minifier-terser": "^7.2.0",
-    "terser": "^5.38.0"
+    "terser": "^5.38.1"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.7",

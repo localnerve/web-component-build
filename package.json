@@ -1,6 +1,6 @@
 {
   "name": "@localnerve/web-component-build",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "description": "A library to help build web components",
   "main": "index.js",
   "type": "module",
@@ -49,14 +49,14 @@
     "cheerio": "^1.0.0",
     "clean-css": "^5.3.3",
     "html-minifier-terser": "^7.2.0",
-    "terser": "^5.38.2"
+    "terser": "^5.39.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.26.8",
     "eslint": "^9.20.1",
     "@eslint/js": "^9.20.0",
     "eslint-plugin-jest": "^28.11.0",
-    "globals": "^15.14.0",
+    "globals": "^15.15.0",
     "jest": "^29.7.0",
     "tempy": "^3.1.0"
   },

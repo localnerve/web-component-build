@@ -61,7 +61,8 @@
     "tempy": "^3.1.0"
   },
   "overrides": {
-    "clean-css": "$clean-css"
+    "clean-css": "$clean-css",
+    "undici": "^6.21.3"
   },
   "engines": {
     "node": ">=18.17"

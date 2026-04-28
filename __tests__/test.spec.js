@@ -4,19 +4,19 @@
  * Copyright (c) 2023 - 2025 Alex Grant (@localnerve), LocalNerve LLC
  * Copyrights licensed under the BSD License. See the accompanying LICENSE file for terms.
  */
-import * as url from 'node:url';
+import { after, describe, test } from 'node:test';
+import assert from 'node:assert';
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 import CleanCss from 'clean-css';
-import {minify as minifyHtml} from 'html-minifier-terser';
-import {minify as minifyJs} from 'terser';
+import { minify as minifyHtml } from 'html-minifier-terser';
+import { minify as minifyJs } from 'terser';
 import * as cheerio from 'cheerio';
-import {temporaryDirectory} from 'tempy';
-import {build} from '../index.js';
+import { temporaryDirectory } from 'tempy';
+import { build } from '../index.js';
 
 const jsReplacementToken = '__JS_REPLACEMENT__';
-const thisDir = url.fileURLToPath(new URL('.', import.meta.url));
-const outputDir = temporaryDirectory();
+const thisDir = import.meta.dirname;
 
 /**
  * Load the fixtures into structures:
@@ -204,77 +204,67 @@ async function makeSpecs (fixtures, outputDirBase) {
   return specs;
 }
 
-const fixtures = await loadFixtures();
-const specs = await makeSpecs(fixtures, outputDir);
+async function verify (name, outputDir, options, output) {
+  let result;
+  try {
+    result = await build(outputDir, options);
+  } catch (e) {
+    if (name.includes('bad-input')) {
+      return;
+    }
+    throw e;
+  }
 
-describe('web-component-build', () => {
-  afterAll(async () => {
+  const [css, html, js] = await Promise.all([
+    result.getCss(),
+    result.getHtml(),
+    result.getJs()
+  ]);
+  
+  // compare html embedded css with css fragment
+  if (html) {
+    const m = /<style>(?<htmlcss>[^<]+)/mg.exec(html);
+    const htmlcss = m?.groups?.htmlcss;
+    assert.strictEqual(htmlcss, css);
+  }
+
+  assert.strictEqual(css, output.css);
+  assert.strictEqual(html, output.html);
+  assert.strictEqual(js, output.js);
+
+  assert.ok(name.includes('js') ? js !== undefined : js === undefined);
+  assert.ok(name.includes('css') ? css !== undefined : css === undefined);
+  assert.ok(name.includes('html') ? html !== undefined : html === undefined);
+
+  assert.strictEqual(result.cssPath, output.cssPath);
+  assert.strictEqual(result.htmlPath, output.htmlPath);
+  assert.strictEqual(result.jsPath, output.jsPath);
+}
+
+const outputDir = temporaryDirectory();
+const specs = await makeSpecs(await loadFixtures(), outputDir);
+
+describe('web-component-build', async () => {
+  after(async () => {
     await fs.rm(outputDir, { recursive: true, force: true });
   });
 
   test('no args', async () => {
-    await expect(async () => {
-      await build();
-    }).rejects.toThrow('Did you forget something');
+    await assert.rejects(build, /Did you forget something/);
   });
 
   test('jsReplacement without jsPath', async () => {
-    await expect(async () => {
+    await assert.rejects(async () => {
       await build('some/path', {
         cssPath: 'some/path/to/file.css',
         jsReplacement: 'somereplacement'
       });
-    }).rejects.toThrow('Did you forget \'jsPath\'');
+    }, /Did you forget 'jsPath'/);
   });
 
-  test.concurrent.each(specs)('$name', async ({
-    name, outputDir, options, output
-  }) => {
-    let result;
-    try {
-      result = await build(outputDir, options);
-    } catch (e) {
-      if (name.includes('bad-input')) {
-        return;
-      }
-      throw e;
-    }
-
-    const [css, html, js] = await Promise.all([
-      result.getCss(),
-      result.getHtml(),
-      result.getJs()
-    ]);
-    
-    // compare html embedded css with css fragment
-    if (html) {
-      const m = /<style>(?<htmlcss>[^<]+)/mg.exec(html);
-      const htmlcss = m?.groups?.htmlcss;
-      expect(htmlcss).toEqual(css);
-    }
-
-    expect(css).toEqual(output.css);
-    expect(html).toEqual(output.html);
-    expect(js).toEqual(output.js);
-
-    if (name.includes('js')) {
-      expect(js).toBeDefined();
-    } else {
-      expect(js).toBeUndefined();
-    }
-    if (name.includes('css')) {
-      expect(css).toBeDefined();
-    } else {
-      expect(css).toBeUndefined();
-    }
-    if (name.includes('html')) {
-      expect(html).toBeDefined();
-    } else {
-      expect(html).toBeUndefined();
-    }
-
-    expect(result.cssPath).toEqual(output.cssPath);
-    expect(result.htmlPath).toEqual(output.htmlPath);
-    expect(result.jsPath).toEqual(output.jsPath);
-  });
+  for (const { name, outputDir: outDir, options, output } of specs) {
+    test(`${name}`, async () => {
+      await verify(name, outDir, options, output);
+    });
+  }
 });

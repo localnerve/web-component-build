@@ -1,6 +1,6 @@
 {
   "name": "@localnerve/web-component-build",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "A library to help build web components",
   "main": "index.js",
   "type": "module",
@@ -10,8 +10,8 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "pretest": "node -e 'require(\"fs\"); fs.rmSync(\"./coverage\", {recursive:true,force:true}); fs.mkdirSync(\"./coverage\", {recursive:true});'",
-    "test": "node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info ./__tests__/*.js"
+    "pretest": "node -e \"const fs=require('fs');fs.rmSync('./coverage',{recursive:true,force:true});fs.mkdirSync('./coverage',{recursive:true})\"",
+    "test": "node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info --test-coverage-exclude=\"__tests__/**\" ./__tests__/*.js"
   },
   "files": [
     "lib"
@@ -47,11 +47,11 @@
     "cheerio": "^1.2.0",
     "clean-css": "^5.3.3",
     "html-minifier-terser": "^7.2.0",
-    "terser": "^5.47.1"
+    "terser": "^5.48.0"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.29.5",
-    "eslint": "^10.3.0",
+    "@babel/preset-env": "^7.29.7",
+    "eslint": "^10.4.1",
     "@eslint/js": "^10.0.1",
     "eslint-plugin-n": "^18.0.1",
     "globals": "^17.6.0",
@@ -61,6 +61,6 @@
     "clean-css": "$clean-css"
   },
   "engines": {
-    "node": ">=20.17"
+    "node": ">=22"
   }
 }

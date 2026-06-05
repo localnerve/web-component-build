@@ -24,7 +24,7 @@ jobs:
       run: npm run lint && npm test
     - name: Coverage Upload
       if: ${{ success() }}
-      uses: coverallsapp/github-action@5cbfd81cd2bc081691285bc0aa87ec5be0b14b8a # 2.3.7
+      uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # 2.3.7
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         path-to-lcov: ./coverage/lcov.info

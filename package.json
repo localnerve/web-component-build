@@ -1,6 +1,6 @@
 {
   "name": "@localnerve/web-component-build",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "description": "A library to help build web components",
   "main": "index.js",
   "type": "module",
@@ -47,7 +47,7 @@
     "cheerio": "^1.2.0",
     "clean-css": "^5.3.3",
     "html-minifier-terser": "^7.2.0",
-    "terser": "^5.51.0"
+    "terser": "^5.51.2"
   },
   "devDependencies": {
     "eslint": "^10.9.1",

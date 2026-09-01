@@ -1,6 +1,6 @@
 {
   "name": "@localnerve/web-component-build",
-  "version": "3.3.1",
+  "version": "3.4.0-rc.1",
   "description": "A library to help build web components",
   "main": "index.js",
   "type": "module",
@@ -11,7 +11,7 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "node -e \"const fs=require('fs');fs.rmSync('./coverage',{recursive:true,force:true});fs.mkdirSync('./coverage',{recursive:true})\"",
-    "test": "node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info --test-coverage-exclude=\"__tests__/**\" ./__tests__/*.js"
+    "test": "node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info --test-coverage-exclude=\"__tests__/**\" ./__tests__/*.spec.js"
   },
   "files": [
     "lib"
@@ -33,11 +33,13 @@
     "email": "alex@localnerve.com",
     "url": "https://www.localnerve.com"
   },
-  "maintainers": [{
-    "name": "Alex Grant",
-    "email": "alex@localnerve.com",
-    "url": "https://www.localnerve.com"
-  }],
+  "maintainers": [
+    {
+      "name": "Alex Grant",
+      "email": "alex@localnerve.com",
+      "url": "https://www.localnerve.com"
+    }
+  ],
   "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/localnerve/web-component-build/issues"
@@ -50,10 +52,11 @@
     "terser": "^5.51.2"
   },
   "devDependencies": {
-    "eslint": "^10.9.1",
     "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
     "eslint-plugin-n": "^18.3.0",
     "globals": "^17.11.0",
+    "jsdom": "^30.0.1",
     "tempy": "^3.2.0"
   },
   "overrides": {

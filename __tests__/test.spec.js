@@ -14,7 +14,7 @@ import { minify as minifyJs } from 'terser';
 import * as cheerio from 'cheerio';
 import { temporaryDirectory } from 'tempy';
 import { start as jsdomStart, stop as jsdomStop } from './jsdom.js';
-import { build, browser } from '../index.js';
+import { build, escapeHtml, trustedHtml, getTrustedPolicy } from '../index.js';
 
 const jsReplacementToken = '__JS_REPLACEMENT__';
 const thisDir = import.meta.dirname;
@@ -271,41 +271,38 @@ describe('web-component-build', async () => {
 });
 
 describe('browser-helpers', () => {
-  test('browser export exists', () => {
-    assert.ok(browser);
-  });
 
   describe('trusted types', () => {
     test('trusted type exports exist', () => {
-      assert.ok(typeof browser.escapeHtml === 'function');
-      assert.ok(typeof browser.getTrustedPolicy === 'function');
-      assert.ok(typeof browser.trustedHtml === 'function');
+      assert.ok(typeof escapeHtml === 'function');
+      assert.ok(typeof getTrustedPolicy === 'function');
+      assert.ok(typeof trustedHtml === 'function');
     });
 
     test('escapeHtml html', () => {
-      assert.match(browser.escapeHtml('<html>'), /&lt;html&gt;/);
+      assert.match(escapeHtml('<html>'), /&lt;html&gt;/);
     });
 
     test('escapeHtml html null', () => {
-      assert.ok(browser.escapeHtml(null) === '');
+      assert.ok(escapeHtml(null) === '');
     });
 
     test('escapeHtml html undefined', () => {
-      assert.ok(browser.escapeHtml() === '');
+      assert.ok(escapeHtml() === '');
     });
 
     test('escapeHtml html passthru', () => {
       const input = 'slug';
-      assert.ok(browser.escapeHtml(input) === input);
+      assert.ok(escapeHtml(input) === input);
     });
 
     test('getTrustedPolicy non browser', () => {
-      assert.ok(browser.getTrustedPolicy('name') === null);
+      assert.ok(getTrustedPolicy('name') === null);
     });
 
     test('trustedHtml passThru', () => {
       const input = 'slug';
-      assert.ok(browser.trustedHtml('name', input) === input);
+      assert.ok(trustedHtml('name', input) === input);
     });
 
     describe('window', () => {
@@ -329,8 +326,8 @@ describe('browser-helpers', () => {
 
       test('getTrustedPolicy, trustedHtml browser', () => {
         const policyName = 'policyName';
-        assert.ok(browser.getTrustedPolicy(policyName) === policy);
-        assert.ok(browser.trustedHtml(policyName) === html)
+        assert.ok(getTrustedPolicy(policyName) === policy);
+        assert.ok(trustedHtml(policyName) === html)
       });
     });
   });

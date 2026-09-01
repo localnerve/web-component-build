@@ -1,13 +1,21 @@
 {
   "name": "@localnerve/web-component-build",
-  "version": "3.4.0-rc.2",
+  "version": "3.4.0-rc.3",
   "description": "A library to help build web components",
   "main": "index.js",
   "type": "module",
   "exports": {
-    "import": "./index.js",
-    "default": "./index.js"
+    ".": {
+      "browser": "./lib/browser/index.js",
+      "import": "./index.js",
+      "default": "./index.js"
+    },
+    "./browser": {
+      "import": "./lib/browser/index.js",
+      "default": "./lib/browser/index.js"
+    }
   },
+  "browser": "./lib/browser/index.js",
   "scripts": {
     "lint": "eslint .",
     "pretest": "node -e \"const fs=require('fs');fs.rmSync('./coverage',{recursive:true,force:true});fs.mkdirSync('./coverage',{recursive:true})\"",

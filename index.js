@@ -6,4 +6,5 @@
  * Copyright (c) 2023 - 2025 Alex Grant (@localnerve), LocalNerve LLC
  * Copyrights licensed under the BSD License. See the accompanying LICENSE file for terms.
  */
-export {build, build as default} from './lib/index.js';
+export { build, build as default } from './lib/index.js';
+export * as browser from './lib/browser/index.js';

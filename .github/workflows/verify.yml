@@ -1,7 +1,7 @@
 name: Verify
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, rc-stage ]
 
 jobs:
   verify:

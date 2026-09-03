@@ -11,6 +11,7 @@ The parts are processed and written to an output directory, then exposed to a ca
 
   * [Why This Exists](#why-this-exists)
   * [Processing Possibilities](#processing-map)
+  * [Trusted Types Helpers](#trusted-types-helpers)
   * [Usage](#usage)
   * [API](#api)
   * [Options](#options-object-optional)
@@ -41,6 +42,40 @@ The following is a table of _some_ of the possible input, processing, and output
 | javascript, cssHref | add link tag to javascript, minify javascript | javascript |
 
 > By default, html minification minifies any css found therein.
+
+## Trusted Types Helpers
+
+In addition to `build`, this package exports a small set of browser runtime helpers so that web components can be authored to work **with** and **without** [Trusted Types](https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types) enforcement (CSP `require-trusted-types-for 'script'`).
+
+```
+export { escapeHtml, getTrustedPolicy, trustedHtml }
+```
+
+The idea: a component registers **its own named policy** for the static, author-controlled markup it injects into sinks (`innerHTML`, etc.), escapes any user-influenced values before composing them, and falls back to plain-string passthrough in browsers (or builds) that do not enforce Trusted Types. Import these helpers directly into your component source — they are small, dependency-free, and get tree-shaken/inlined into the final bundle at build time (a consuming component does **not** need a runtime dependency on this package).
+
+### escapeHtml(input)
+Applies the industry-standard 6-character escape — `& < > " ' \`` → `&amp; &lt; &gt; &quot; &#x27; &#x60;` — for safe interpolation into HTML markup. Escaping quotes and the backtick (not just `&lt;/&gt;`) is what makes the result safe to reuse inside an **attribute value**, not only element content (matches `he.escape`). `null`/`undefined` yield `''`. Use it for any user-influenced value before composing it into markup.
+```js
+import { escapeHtml } from '@localnerve/web-component-build';
+const html = `<li>${escapeHtml(key)}: ${escapeHtml(value)}</li>`;
+// safe to interpolate into text OR a quoted attribute value
+```
+
+### getTrustedPolicy(name, hooks)
+Gets (creating once) a named Trusted Type policy. A name may only be created once without the CSP `allow-duplicates` keyword, so repeated calls reuse the instance. Returns `null` when Trusted Types is unavailable (passthrough mode). The default hooks are pass-through `createHTML`/`createScriptURL`, appropriate for author-controlled content that has already been escaped where needed.
+```js
+import { getTrustedPolicy } from '@localnerve/web-component-build';
+const policy = getTrustedPolicy('my-component'); // null if TT unavailable
+```
+
+### trustedHtml(policyName, html)
+Converts author-controlled (or pre-escaped) markup into a value safe to pass to an HTML injection sink under Trusted Types enforcement. Returns a `TrustedHTML` when enforced, otherwise the input string unchanged (passthrough for dev builds / browsers without Trusted Types).
+```js
+import { trustedHtml } from '@localnerve/web-component-build';
+shadowRoot.innerHTML = trustedHtml('my-component', '<div>…static template…</div>');
+```
+
+> The policy name must be allowlisted in the site's CSP `trusted-types` directive, e.g. `trusted-types default my-component;`. A build step can compute that allowlist from your sources — see [`@localnerve/trusted-types-rules`](https://github.com/localnerve/trusted-types-rules#readme). See [editable-object](https://github.com/localnerve/editable-object#trusted-types) for a complete, real-world example of a component built on these helpers.
 
 ## Usage
 

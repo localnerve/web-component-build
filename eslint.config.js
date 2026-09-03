@@ -50,6 +50,9 @@ export default [{
 }, {
   name: 'lib',
   plugins: { n: nodePlugin },
+  ignores: [
+    'lib/apis/**'
+  ],
   files: [
     'lib/**'
   ],
@@ -61,6 +64,20 @@ export default [{
   rules: {
     ...js.configs.recommended.rules,
     ...nodeRules,
+    ...commonRules
+  }
+}, {
+  name: 'browser',
+  files: [
+    'lib/browser/**'
+  ],
+  languageOptions: {
+    globals: {
+      ...globals.browser
+    }
+  },
+  rules: {
+    ...js.configs.recommended.rules,
     ...commonRules
   }
 }];

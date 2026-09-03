@@ -1,7 +1,7 @@
 name: Deploy
 on:
   push:
-    branches: [ main ]
+    branches: [ main, rc-stage ]
 
 jobs:
   deploy:
@@ -22,4 +22,9 @@ jobs:
           run: npm run lint && npm test
         - name: Publish with Provenance
           if: ${{ success() }}
-          run: npm publish --access public
+          run: |
+            if [ "${{ github.ref_name }}" = "rc-stage" ]; then
+              npm publish --access public --tag rc
+            else
+              npm publish --access public
+            fi

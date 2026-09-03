@@ -26,5 +26,5 @@ jobs:
             if [ "${{ github.ref_name }}" = "rc-stage" ]; then
               npm publish --access public --tag rc
             else
-              npm publish --access public
+              npm publish --access public --tag latest
             fi

@@ -44,8 +44,8 @@ The following is a table of _some_ of the possible input, processing, and output
 
 > By default, html minification minifies any css found therein.
 
-## Multiple Templates
-A component can carry several HTML templates (e.g. default / error / empty states), each referenced by its own distinct token in the javascript. Pass a `templates` array:
+## Templates
+The `templates` array is how html (and css/link) are described to the build. A component can carry several HTML templates (e.g. default / error / empty states), each referenced by its own distinct token in the javascript:
 
 ```javascript
 const result = await build(outputDir, {
@@ -56,9 +56,9 @@ const result = await build(outputDir, {
     { name: 'error',   htmlPath: '/some/path/error.html',   token: '__TPL_ERROR__' }
   ]
 });
-// result.htmls -> [{ name, path, getHtml }, ...] in input order
+// result.html -> { default: {name, path, getHtml}, error: {...} } keyed by template name
 ```
-Each entry takes `name` (output filename, defaults to the input basename), `htmlPath`, `token` (String or RegExp), and an optional per-template `cssLinkHref` override. The single-template `htmlPath` + `jsReplacement` options still work and are treated as one template.
+Each entry takes `name` (output filename, defaults to the input basename), `htmlPath`, `token` (String or RegExp), and optional per-template `cssPath` / `cssLinkHref` overrides that fall back to the shared values. A template may omit `htmlPath` (then only its css/link payload is injected). Pure javascript or css builds pass no templates.
 
 > Injection is **syntax-aware**: markup is spliced into the token's string/template literal with escaping for that context, so it may safely contain quotes, backticks, `${`, or backslashes.
 
@@ -107,8 +107,9 @@ shadowRoot.innerHTML = trustedHtml('my-component', '<div>…static template…</
     cssPath: '/some/path/file.css',
     cssLinkHref: '//some/path/file.css',
     jsPath: '/some/path/file.js',
-    htmlPath: '/some/path/file.html',
-    jsReplacement: '__REPLACEMENT_IN_JS__',
+    templates: [
+      { name: 'index', htmlPath: '/some/path/file.html', token: '__REPLACEMENT_IN_JS__' }
+    ],
     terserOptions: { /* terser options */ },
     htmlminOptions: { /* html-minifier options */ },
     cleancssOptions: { /* clean-css options */ },
@@ -118,11 +119,12 @@ shadowRoot.innerHTML = trustedHtml('my-component', '<div>…static template…</
   
   // Retrieve processed content
   const [js, css, html] = await Promise.all([
-    result.getJs(), result.getCss(), result.getHtml()
+    result.getJs(), result.getCss(), result.html.index.getHtml()
   ]);
 
   // Retrieve output paths
-  const [jsPath, cssPath, htmlPath] = [result.jsPath, result.cssPath, result.htmlPath];
+  const [jsPath, cssPath, htmlPath] =
+    [result.jsPath, result.cssPath, result.html.index.path];
 ```
 
 ## API
@@ -150,24 +152,14 @@ Full path to the output directory where css, html, and javascript output are wri
     + resulting `link` will be prepended to the html file if `htmlPath` supplied
     + resulting `link` will be inserted into the javascript file if no `htmlPath` supplied and `jsReplacement` and `jsPath` supplied  
   
-* **htmlPath** {String} - Full path to the input html file  
-  If supplied:  
-    + css will be prepended in a `style` tag
-    + cssLinkHref will be prepended in a `link` tag
-    + html will be inserted into the javascript file if `jsReplacement` and `jsPath` is supplied  
-  
 * **jsPath** {String} - Full path to the input javascript file
-* **jsReplacement** {String|RegExp} - The replacement pattern for the css or html in the javascript file (single template). See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern) for full documentation  
-  If supplied:
-    + A replacement will be attempted in the javascript file, `jsPath` must also be supplied
-    + If **not supplied** or falsy, No replacement will be attempted and all assets are just copied to `outputDir`  
-  
 * **templates** {Array} - Zero or more templates, each an object with:  
-  * **name** {String} - Output filename without extension (`${name}.html`). Defaults to the input basename.
+  * **name** {String} - Output filename without extension (written as `${name}.html`). Defaults to the input basename.
   * **htmlPath** {String} - Full path to the input html for this template.
-  * **token** {String|RegExp} - The placeholder in the javascript to replace.
+  * **token** {String|RegExp} - The placeholder in the javascript to replace. See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern).
+  * **cssPath** {String} - Optional per-template css override (falls back to the shared `cssPath`).
   * **cssLinkHref** {String} - Optional per-template link href override (falls back to the shared `cssLinkHref`).  
-  When supplied, takes precedence over the flat `htmlPath`/`jsReplacement` options. Shared `cssPath`/`cssLinkHref` are applied to every template. Duplicate resolved output names throw.
+  Shared `cssPath`/`cssLinkHref` are applied to every template that does not override them. A token with no `jsPath` throws, as do duplicate resolved output names. The flat `htmlPath`/`jsReplacement` options were removed in v4 and now throw a migration error.
   
 * **terserOptions** {Object} - The [javascript minifier options](https://github.com/terser/terser/blob/master/README.md#minify-options) object  
   Defaults:
@@ -201,17 +193,13 @@ The output of the build process. Allows access to the output paths and full outp
   
   + **cssPath** {String}, The full path to the output css  
   
-  + **htmlPath** {String}, The full path to the output html  
-  
   + **jsPath** {String}, The full path to the output javascript  
   
   + **getCss** {asyncFunction}, gets the output css  
   
-  + **getHtml** {asyncFunction}, gets the output html  
-  
   + **getJs** {asyncFunction}, gets the output javascript  
   
-  + **htmls** {Array}, ordered list (matching `templates` input order) of `{ name, path, getHtml }` — one entry per html template. `getHtml()`/`htmlPath` above are shorthands for the first entry.
+  + **html** {Object}, A map keyed by template name. Each entry: `{ name, path, getHtml }` where `path` is the full path to that template's output html and `getHtml` (async) returns its content.
   
 ## License
   * [BSD-3 Clasuse, Alex Grant, LocalNerve](LICENSE.md)

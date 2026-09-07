@@ -11,6 +11,7 @@ The parts are processed and written to an output directory, then exposed to a ca
 
   * [Why This Exists](#why-this-exists)
   * [Processing Possibilities](#processing-map)
+  * [Multiple Templates](#multiple-templates)
   * [Trusted Types Helpers](#trusted-types-helpers)
   * [Usage](#usage)
   * [API](#api)
@@ -42,6 +43,24 @@ The following is a table of _some_ of the possible input, processing, and output
 | javascript, cssHref | add link tag to javascript, minify javascript | javascript |
 
 > By default, html minification minifies any css found therein.
+
+## Multiple Templates
+A component can carry several HTML templates (e.g. default / error / empty states), each referenced by its own distinct token in the javascript. Pass a `templates` array:
+
+```javascript
+const result = await build(outputDir, {
+  jsPath: '/some/path/file.js',
+  cssPath: '/some/path/file.css',          // shared, prepended to every template
+  templates: [
+    { name: 'default', htmlPath: '/some/path/default.html', token: '__TPL_DEFAULT__' },
+    { name: 'error',   htmlPath: '/some/path/error.html',   token: '__TPL_ERROR__' }
+  ]
+});
+// result.htmls -> [{ name, path, getHtml }, ...] in input order
+```
+Each entry takes `name` (output filename, defaults to the input basename), `htmlPath`, `token` (String or RegExp), and an optional per-template `cssLinkHref` override. The single-template `htmlPath` + `jsReplacement` options still work and are treated as one template.
+
+> Injection is **syntax-aware**: markup is spliced into the token's string/template literal with escaping for that context, so it may safely contain quotes, backticks, `${`, or backslashes.
 
 ## Trusted Types Helpers
 
@@ -138,10 +157,17 @@ Full path to the output directory where css, html, and javascript output are wri
     + html will be inserted into the javascript file if `jsReplacement` and `jsPath` is supplied  
   
 * **jsPath** {String} - Full path to the input javascript file
-* **jsReplacement** {String|RegExp} - The replacement pattern for the css or html in the javascript file. See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern) for full documentation  
+* **jsReplacement** {String|RegExp} - The replacement pattern for the css or html in the javascript file (single template). See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern) for full documentation  
   If supplied:
     + A replacement will be attempted in the javascript file, `jsPath` must also be supplied
     + If **not supplied** or falsy, No replacement will be attempted and all assets are just copied to `outputDir`  
+  
+* **templates** {Array} - Zero or more templates, each an object with:  
+  * **name** {String} - Output filename without extension (`${name}.html`). Defaults to the input basename.
+  * **htmlPath** {String} - Full path to the input html for this template.
+  * **token** {String|RegExp} - The placeholder in the javascript to replace.
+  * **cssLinkHref** {String} - Optional per-template link href override (falls back to the shared `cssLinkHref`).  
+  When supplied, takes precedence over the flat `htmlPath`/`jsReplacement` options. Shared `cssPath`/`cssLinkHref` are applied to every template. Duplicate resolved output names throw.
   
 * **terserOptions** {Object} - The [javascript minifier options](https://github.com/terser/terser/blob/master/README.md#minify-options) object  
   Defaults:
@@ -182,6 +208,8 @@ The output of the build process. Allows access to the output paths and full outp
   + **getHtml** {asyncFunction}, gets the output html  
   
   + **getJs** {asyncFunction}, gets the output javascript  
+  
+  + **htmls** {Array}, ordered list (matching `templates` input order) of `{ name, path, getHtml }` — one entry per html template. `getHtml()`/`htmlPath` above are shorthands for the first entry.
   
 ## License
   * [BSD-3 Clasuse, Alex Grant, LocalNerve](LICENSE.md)

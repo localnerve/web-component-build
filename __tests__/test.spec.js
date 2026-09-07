@@ -15,6 +15,7 @@ import * as cheerio from 'cheerio';
 import { temporaryDirectory } from 'tempy';
 import { start as jsdomStart, stop as jsdomStop } from './jsdom.js';
 import { build, escapeHtml, trustedHtml, getTrustedPolicy } from '../index.js';
+import { injectTokens } from '../lib/replace.js';
 
 const jsReplacementToken = '__JS_REPLACEMENT__';
 const thisDir = import.meta.dirname;
@@ -174,21 +175,17 @@ async function makeSpecs (fixtures, outputDirBase) {
     }
 
     if (fixture.jsReplacement) {
+      let payload;
       if (spec.output.html) {
-        let htmlOutput = spec.output.html.replace(/$/mg, '\\');
-        if (htmlOutput.endsWith('\\')) {
-          htmlOutput = htmlOutput.slice(0, -1);
-        }
-        jsStage = fixture.js.fileContent.replace(
-          jsReplacementToken, htmlOutput
-        );
+        payload = spec.output.html;
       } else if (spec.output.css) {
-        jsStage = fixture.js.fileContent.replace(
-          jsReplacementToken, `<style>${spec.output.css}</style>`
-        );
+        payload = `<style>${spec.output.css}</style>`;
       } else if (link) {
-        jsStage = fixture.js.fileContent.replace(
-          jsReplacementToken, link
+        payload = link;
+      }
+      if (payload !== undefined) {
+        jsStage = injectTokens(
+          fixture.js.fileContent, [{ pattern: jsReplacementToken, payload }]
         );
       }
     }

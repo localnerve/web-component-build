@@ -258,3 +258,101 @@ describe('v3.5.0 validation and error paths', () => {
     await fs.rm(dir, { recursive: true, force: true });
   });
 });
+
+describe('v3.5.0 deprecation warnings', () => {
+  /**
+   * Run build() in a child process so we capture stdout/stderr without polluting
+   * the test runner's own console output. Returns { exitCode, stderr, stdout }.
+   */
+  async function runBuildInChild (code) {
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const execFileAsync = promisify(execFile);
+    try {
+      const { stdout, stderr } = await execFileAsync(
+        process.execPath, ['--input-type=module', '-e', code],
+        { encoding: 'utf8', timeout: 10_000 }
+      );
+      return { exitCode: 0, stdout, stderr };
+    } catch (err) {
+      return { exitCode: err.code ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
+    }
+  }
+
+  const childModuleDir = path.join(import.meta.dirname, '..');
+
+  test('flat options emit deprecation warnings to stderr', async () => {
+    const dir = await tempDir();
+    const jsPath = await writeFile(dir, 'component.js', 'class C extends HTMLElement {}\ncustomElements.define(\'c\', C);');
+    const htmlPath = await writeFile(dir, 'index.html', '<p>hi</p>');
+
+    const code = `
+      import { build } from '${childModuleDir}/index.js';
+      await build(${JSON.stringify(dir)}, { jsPath: ${JSON.stringify(jsPath)}, htmlPath: ${JSON.stringify(htmlPath)}, jsReplacement: '__JS_REPLACEMENT__' });
+    `;
+    const { stderr } = await runBuildInChild(code);
+    assert.ok(stderr.includes('deprecated'), 'should contain "deprecated"');
+    assert.ok(stderr.includes('v4.0.0'), 'should reference v4.0.0');
+    assert.ok(stderr.includes('templates'), 'should mention templates migration');
+
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+
+  test('deprecationWarnings: false suppresses warnings', async () => {
+    const dir = await tempDir();
+    const jsPath = await writeFile(dir, 'component.js', 'class C extends HTMLElement {}\ncustomElements.define(\'c\', C);');
+    const htmlPath = await writeFile(dir, 'index.html', '<p>hi</p>');
+
+    const code = `
+      import { build } from '${childModuleDir}/index.js';
+      await build(${JSON.stringify(dir)}, { jsPath: ${JSON.stringify(jsPath)}, htmlPath: ${JSON.stringify(htmlPath)}, jsReplacement: '__JS_REPLACEMENT__', deprecationWarnings: false });
+    `;
+    const { stderr } = await runBuildInChild(code);
+    assert.ok(!stderr.includes('deprecated'), 'should NOT contain "deprecated"');
+
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+
+  test('WEB_COMPONENT_BUILD_NO_DEPRECATION_WARNINGS env suppresses warnings', async () => {
+    const dir = await tempDir();
+    const jsPath = await writeFile(dir, 'component.js', 'class C extends HTMLElement {}\ncustomElements.define(\'c\', C);');
+    const htmlPath = await writeFile(dir, 'index.html', '<p>hi</p>');
+
+    const code = `
+      import { build } from '${childModuleDir}/index.js';
+      await build(${JSON.stringify(dir)}, { jsPath: ${JSON.stringify(jsPath)}, htmlPath: ${JSON.stringify(htmlPath)}, jsReplacement: '__JS_REPLACEMENT__' });
+    `;
+    // Run with the env var set — execFile directly for env control.
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    const execFileAsync = promisify(execFile);
+    let stderr;
+    try {
+      const out = await execFileAsync(
+        process.execPath, ['--input-type=module', '-e', code],
+        { encoding: 'utf8', timeout: 10_000, env: { ...process.env, WEB_COMPONENT_BUILD_NO_DEPRECATION_WARNINGS: '1' } }
+      );
+      stderr = out.stderr;
+    } catch (err) {
+      stderr = err.stderr ?? '';
+    }
+    assert.ok(!stderr.includes('deprecated'), 'stderr should NOT contain "deprecated"');
+
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+
+  test('templates option does NOT emit deprecation warnings', async () => {
+    const dir = await tempDir();
+    const jsPath = await writeFile(dir, 'component.js', 'class C extends HTMLElement {}\ncustomElements.define(\'c\', C);');
+    const htmlPath = await writeFile(dir, 'index.html', '<p>hi</p>');
+
+    const code = `
+      import { build } from '${childModuleDir}/index.js';
+      await build(${JSON.stringify(dir)}, { jsPath: ${JSON.stringify(jsPath)}, templates: [{ name: 'index', htmlPath: ${JSON.stringify(htmlPath)}, token: '__JS_REPLACEMENT__' }] });
+    `;
+    const { stderr } = await runBuildInChild(code);
+    assert.ok(!stderr.includes('deprecated'), 'should NOT contain "deprecated"');
+
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+});

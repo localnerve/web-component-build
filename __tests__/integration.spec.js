@@ -316,6 +316,30 @@ describe('v4.0.0 validation and error paths', () => {
     await assert.rejects(build('/nonexistent/out', {}), /Did you forget something/);
   });
 
+  test('throws upfront when outputDir does not exist', async () => {
+    const dir = await tempDir();
+    const jsPath = await writeFile(dir, 'component.js', 'class C extends HTMLElement {}');
+    const missing = path.join(dir, 'no-such-output-dir');
+    await assert.rejects(
+      build(missing, { jsPath }),
+      /outputDir does not exist/
+    );
+    // the error is thrown before anything is written or read beyond validation
+    const files = (await fs.readdir(dir)).filter(f => f !== 'component.js');
+    assert.deepStrictEqual(files, []);
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+
+  test('throws when outputDir is not a directory', async () => {
+    const dir = await tempDir();
+    const jsPath = await writeFile(dir, 'component.js', 'class C extends HTMLElement {}');
+    await assert.rejects(
+      build(jsPath, { jsPath }),
+      /outputDir is not a directory/
+    );
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+
   test('throws when templates is not an array', async () => {
     await assert.rejects(
       build('/nonexistent/out', { jsPath: 'x.js', templates: 'nope' }),

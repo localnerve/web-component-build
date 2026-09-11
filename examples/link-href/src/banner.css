@@ -1,0 +1,11 @@
+/* In a real deployment this file would be published to a CDN and the
+   cssLinkHref would point at that URL. Here we keep a local copy so the
+   demo page can load it from disk. */
+
+.banner {
+  padding: 1rem;
+  text-align: center;
+  background: linear-gradient(90deg, #0969da, #8250df);
+  color: #fff;
+  font-family: system-ui, sans-serif;
+}

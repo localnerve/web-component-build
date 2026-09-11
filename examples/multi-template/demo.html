@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- Demo page: renders the built <data-grid> in all three states.
+     Open this file directly (file://) after running build.mjs — it loads
+     the minified output js, which carries the state markup inline. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>data-grid demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    section { margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>&lt;data-grid&gt; — multi-template demo</h1>
+
+  <!-- Built component (markup + shared css are inside the js) -->
+  <section>
+    <h2>Built component, per state</h2>
+    <p><code>state="default"</code></p>
+    <data-grid state="default"></data-grid>
+    <p><code>state="empty"</code></p>
+    <data-grid state="empty"></data-grid>
+    <p><code>state="error"</code></p>
+    <data-grid state="error"></data-grid>
+  </section>
+
+  <!-- The three standalone html outputs (each is a self-contained fragment;
+       with sharedMultiTemplate "first" only default.html carries the style) -->
+  <section>
+    <h2>Standalone html outputs</h2>
+    <p><code>output/first/default.html</code></p>
+    <iframe src="./output/first/default.html" height="80"></iframe>
+    <p><code>output/first/empty.html</code></p>
+    <iframe src="./output/first/empty.html" height="60"></iframe>
+    <p><code>output/every/error.html</code> (self-contained — carries its own style)</p>
+    <iframe src="./output/every/error.html" height="60"></iframe>
+  </section>
+
+  <script type="module" src="./output/first/grid.js"></script>
+</body>
+</html>

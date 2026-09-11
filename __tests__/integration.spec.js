@@ -132,7 +132,7 @@ describe('v4.0.0 quote-robust injection', () => {
 });
 
 describe('v4.0.0 multi-template (templates option)', () => {
-  test('three templates share one css; each round-trips into its token', async () => {
+  test('three templates share one css (default sharedMultiTemplate "first"); each round-trips into its token', async () => {
     const dir = await tempDir();
     const jsPath = await writeFile(dir, 'component.js',
       'class C extends HTMLElement {\n' +
@@ -169,6 +169,54 @@ describe('v4.0.0 multi-template (templates option)', () => {
       const needle = name === 'default' ? '<div' : (name === 'error' ? 'went wrong' : 'Nothing here');
       assert.strictEqual(literalValues(js, needle)[0], onDisk);
     }
+
+    // default sharedMultiTemplate is "first": the shared css is embedded only in the
+    // first template that uses it, so later templates stay style-free.
+    const [diskDefault, diskError, diskEmpty] = await Promise.all([
+      fs.readFile(result.html.default.path, 'utf8'),
+      fs.readFile(result.html.error.path, 'utf8'),
+      fs.readFile(result.html.empty.path, 'utf8')
+    ]);
+    assert.ok(diskDefault.includes('<style>'), 'first template embeds shared css');
+    assert.ok(!diskError.includes('<style>'), 'second template does not re-embed shared css');
+    assert.ok(!diskEmpty.includes('<style>'), 'third template does not re-embed shared css');
+
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+
+  test('sharedMultiTemplate "every" embeds the shared css in each template', async () => {
+    const dir = await tempDir();
+    const jsPath = await writeFile(dir, 'component.js',
+      'class C extends HTMLElement {\n' +
+      '  connectedCallback () {\n' +
+      '    this.default = \'__TPL_DEFAULT__\';\n' +
+      '    this.error = \'__TPL_ERROR__\';\n' +
+      '  }\n}\ncustomElements.define(\'c\', C);\n');
+    const cssPath = await writeFile(dir, 'index.css', '.base{color:blue}');
+    const defaultHtml = await writeFile(dir, 'default.html', '<div class="base">default</div>');
+    const errorHtml = await writeFile(dir, 'error.html', '<p>Something went wrong</p>');
+
+    const result = await build(dir, {
+      jsPath, cssPath,
+      sharedMultiTemplate: 'every',
+      templates: [
+        { name: 'default', htmlPath: defaultHtml, token: '__TPL_DEFAULT__' },
+        { name: 'error', htmlPath: errorHtml, token: '__TPL_ERROR__' }
+      ]
+    });
+
+    const js = await result.getJs();
+    acorn.parse(js, { ecmaVersion: 'latest', sourceType: 'module' });
+
+    const [onDiskDefault, onDiskError] = await Promise.all([
+      fs.readFile(result.html.default.path, 'utf8'),
+      fs.readFile(result.html.error.path, 'utf8')
+    ]);
+    const EVERY = 'every';
+    assert.ok(onDiskDefault.includes('<style>'), `${EVERY}: first template embeds shared css`);
+    assert.ok(onDiskError.includes('<style>'), `${EVERY}: second template re-embeds shared css`);
+    assert.strictEqual(literalValues(js, '<div')[0], onDiskDefault);
+    assert.strictEqual(literalValues(js, 'went wrong')[0], onDiskError);
 
     await fs.rm(dir, { recursive: true, force: true });
   });
@@ -272,6 +320,13 @@ describe('v4.0.0 validation and error paths', () => {
     await assert.rejects(
       build('/nonexistent/out', { jsPath: 'x.js', templates: 'nope' }),
       /must be an array/
+    );
+  });
+
+  test('throws on an invalid sharedMultiTemplate value', async () => {
+    await assert.rejects(
+      build('/nonexistent/out', { jsPath: 'x.js', templates: [], sharedMultiTemplate: 'all' }),
+      /"sharedMultiTemplate" must be "first" or "every"/
     );
   });
 

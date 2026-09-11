@@ -50,7 +50,7 @@ The `templates` array is how html (and css/link) are described to the build. A c
 ```javascript
 const result = await build(outputDir, {
   jsPath: '/some/path/file.js',
-  cssPath: '/some/path/file.css',          // shared, prepended to every template
+  cssPath: '/some/path/file.css',          // shared; embedding follows `sharedMultiTemplate` (default "first")
   templates: [
     { name: 'default', htmlPath: '/some/path/default.html', token: '__TPL_DEFAULT__' },
     { name: 'error',   htmlPath: '/some/path/error.html',   token: '__TPL_ERROR__' }
@@ -59,6 +59,8 @@ const result = await build(outputDir, {
 // result.html -> { default: {name, path, getHtml}, error: {...} } keyed by template name
 ```
 Each entry takes `name` (output filename, defaults to the input basename), `htmlPath`, `token` (String or RegExp), and optional per-template `cssPath` / `cssLinkHref` overrides that fall back to the shared values. A template may omit `htmlPath` (then only its css/link payload is injected). Pure javascript or css builds pass no templates.
+
+> By default (`sharedMultiTemplate: "first"`) the shared `cssPath`/`cssLinkHref` are embedded only in the **first** template that uses them, so several templates of one component placed into a single shadow root do not duplicate the css. Set `sharedMultiTemplate: "every"` to embed the shared styles in each template's output instead, keeping every html self-contained (needed when a template may ship alone, e.g. per-state SSR or standalone fragments). Per-template `cssPath`/`cssLinkHref` overrides are always embedded in their own template.
 
 > Injection is **syntax-aware**: markup is spliced into the token's string/template literal with escaping for that context, so it may safely contain quotes, backticks, `${`, or backslashes.
 
@@ -150,7 +152,9 @@ Full path to the output directory where css, html, and javascript output are wri
   If supplied:
     + href will be wrapped in a `link` tag
     + resulting `link` will be prepended to the html file if `htmlPath` supplied
-    + resulting `link` will be inserted into the javascript file if no `htmlPath` supplied and `jsReplacement` and `jsPath` supplied  
+    + resulting `link` will be inserted into the javascript file if no `htmlPath` supplied and `jsReplacement` and `jsPath` supplied
+  
+* **sharedMultiTemplate** {String} - How SHARED `cssPath`/`cssLinkHref` are embedded across templates. Defaults to `"first"`: shared styles are embedded only in the first template that uses them, so several templates of one component placed into a single shadow root do not duplicate the css (later templates carry markup only). Use `"every"` to embed the shared styles in each template's output, keeping every html self-contained (needed when a template may ship alone, e.g. per-state SSR/standalone fragments). Per-template `cssPath`/`cssLinkHref` overrides are always embedded in their own template, in either mode. Any other value throws.
   
 * **jsPath** {String} - Full path to the input javascript file
 * **templates** {Array} - Zero or more templates, each an object with:  
@@ -159,7 +163,7 @@ Full path to the output directory where css, html, and javascript output are wri
   * **token** {String|RegExp} - The placeholder in the javascript to replace. See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern).
   * **cssPath** {String} - Optional per-template css override (falls back to the shared `cssPath`).
   * **cssLinkHref** {String} - Optional per-template link href override (falls back to the shared `cssLinkHref`).  
-  Shared `cssPath`/`cssLinkHref` are applied to every template that does not override them. A token with no `jsPath` throws, as do duplicate resolved output names. The flat `htmlPath`/`jsReplacement` options were removed in v4 and now throw a migration error.
+  Shared `cssPath`/`cssLinkHref` follow the `sharedMultiTemplate` mode: embedded in the first template that uses them by default (`"first"`), or in every template when `sharedMultiTemplate: "every"`. Per-template overrides are always embedded in their own template. A token with no `jsPath` throws, as do duplicate resolved output names and invalid `sharedMultiTemplate` values. The flat `htmlPath`/`jsReplacement` options were removed in v4 and now throw a migration error.
   
 * **terserOptions** {Object} - The [javascript minifier options](https://github.com/terser/terser/blob/master/README.md#minify-options) object  
   Defaults:

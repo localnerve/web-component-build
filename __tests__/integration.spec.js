@@ -20,7 +20,7 @@ import { build } from '../index.js';
 const TOKEN = '__JS_REPLACEMENT__';
 
 async function tempDir () {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'wcb-350-'));
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'wcb-400-'));
   return dir;
 }
 

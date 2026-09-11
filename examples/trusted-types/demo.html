@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- Demo: serves the built <comment-list>. Run a static server from the repo
+     root (e.g. `npx serve .`) and open /examples/trusted-types/demo.html —
+     ES modules don't load over file://.
+     To test Trusted Types enforcement, add to your CSP:
+       require-trusted-types-for 'script'; trusted-types default comment-list; -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>comment-list demo (Trusted Types)</title>
+</head>
+<body style="font-family: system-ui, sans-serif; margin: 2rem;">
+  <h1>&lt;comment-list&gt; — Trusted Types</h1>
+  <p>
+    The static template goes through the component's own policy
+    (<code>trustedHtml('comment-list', …)</code>); the comment below is
+    user-influenced and gets escaped by <code>escapeHtml()</code> before it's
+    composed into markup — watch it render as text, not html.
+  </p>
+  <comment-list></comment-list>
+  <script type="module">
+    import './output/comment-list.js';
+    const list = document.querySelector('comment-list');
+    list.addComment('<b>xss</b>', 'I am <script>alert("hi")<\/script> &amp; friends');
+    list.addComment('Grace', 'Escaping all six characters (&lt; &gt; " \' ` &) is what makes this safe.');
+  </script>
+</body>
+</html>

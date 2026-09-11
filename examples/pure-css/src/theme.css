@@ -1,0 +1,22 @@
+/* Design tokens + base styles for a component family.
+   A common use: minify this and hand it to a CSP hash tool,
+   or ship it as the canonical stylesheet for your components. */
+
+:host {
+  --accent: #0969da;
+  --surface: #f6f8fa;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.badge--muted {
+  background: var(--surface);
+  color: #57606a;
+}

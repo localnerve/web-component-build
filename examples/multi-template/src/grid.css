@@ -1,0 +1,29 @@
+.grid {
+  font-family: system-ui, sans-serif;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.grid-row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.grid-row:last-child {
+  border-bottom: none;
+}
+
+.empty-state,
+.error-state {
+  font-family: system-ui, sans-serif;
+  text-align: center;
+  padding: 1rem;
+  color: #57606a;
+}
+
+.error-state {
+  color: #cf222e;
+}

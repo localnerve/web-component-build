@@ -10,6 +10,7 @@ Assembles a web component from its parts, allows developers to author the compon
 The parts are processed and written to an output directory, then exposed to a calling build process.  
 
   * [Why This Exists](#why-this-exists)
+  * [Examples](#examples)
   * [Processing Possibilities](#processing-map)
   * [Multiple Templates](#multiple-templates)
   * [Trusted Types Helpers](#trusted-types-helpers)
@@ -23,6 +24,21 @@ The parts are processed and written to an output directory, then exposed to a ca
   2. Expose CSS for the web component to builds for computing [CSP hashes](https://github.com/localnerve/csp-hashes#readme)
   3. Expose HTML for the web component to builds for companion templates and/or DSD for SSR builds
   4. Enable/ease paying these conveniences forward in web component distribution packages
+
+## Examples
+New here? The [`examples/`](./examples/) directory has seven self-contained examples — each with its own fixtures, build script, and README — covering the most common ways to build a web component with this library. Clone the repo and run any one from the root:
+
+```bash
+node examples/js-css-html/build.mjs   # the canonical js + css + html build
+```
+
+  * [js-css-html](./examples/js-css-html/) — minified css + html injected into a JS token; all three outputs written
+  * [pure-js](./examples/pure-js/) — javascript-only components (no templates)
+  * [pure-css](./examples/pure-css/) — minify a stylesheet for distribution / CSP hashes
+  * [inline-style-no-html](./examples/inline-style-no-html/) — css injected as a bare `<style>` payload, no html file
+  * [link-href](./examples/link-href/) — reference an external stylesheet with a `<link>` tag instead of inlining css
+  * [multi-template](./examples/multi-template/) — several authored states (default / empty / error) and the `sharedMultiTemplate` option, with a renderable demo page
+  * [trusted-types](./examples/trusted-types/) — components authored against the Trusted Types helpers, with an XSS-probe demo
 
 ## Processing Map
 The following is a table of _some_ of the possible input, processing, and output combos. See [options](#options-object-optional) for detailed explanations.
@@ -44,23 +60,27 @@ The following is a table of _some_ of the possible input, processing, and output
 
 > By default, html minification minifies any css found therein.
 
-## Multiple Templates
-A component can carry several HTML templates (e.g. default / error / empty states), each referenced by its own distinct token in the javascript. Pass a `templates` array:
+## Templates
+The `templates` array is how html (and css/link) are described to the build. A component can carry several HTML templates (e.g. default / error / empty states), each referenced by its own distinct token in the javascript:
 
 ```javascript
 const result = await build(outputDir, {
   jsPath: '/some/path/file.js',
-  cssPath: '/some/path/file.css',          // shared, prepended to every template
+  cssPath: '/some/path/file.css',          // shared; embedding follows `sharedMultiTemplate` (default "first")
   templates: [
     { name: 'default', htmlPath: '/some/path/default.html', token: '__TPL_DEFAULT__' },
     { name: 'error',   htmlPath: '/some/path/error.html',   token: '__TPL_ERROR__' }
   ]
 });
-// result.htmls -> [{ name, path, getHtml }, ...] in input order
+// result.html -> { default: {name, path, getHtml}, error: {...} } keyed by template name
 ```
-Each entry takes `name` (output filename, defaults to the input basename), `htmlPath`, `token` (String or RegExp), and an optional per-template `cssLinkHref` override. The single-template `htmlPath` + `jsReplacement` options still work and are treated as one template.
+Each entry takes `name` (output filename, defaults to the input basename), `htmlPath`, `token` (String or RegExp), and optional per-template `cssPath` / `cssLinkHref` overrides that fall back to the shared values. A template may omit `htmlPath` (then only its css/link payload is injected). Pure javascript or css builds pass no templates.
+
+> By default (`sharedMultiTemplate: "first"`) the shared `cssPath`/`cssLinkHref` are embedded only in the **first** template that uses them, so several templates of one component placed into a single shadow root do not duplicate the css. Set `sharedMultiTemplate: "every"` to embed the shared styles in each template's output instead, keeping every html self-contained (needed when a template may ship alone, e.g. per-state SSR or standalone fragments). Per-template `cssPath`/`cssLinkHref` overrides are always embedded in their own template.
 
 > Injection is **syntax-aware**: markup is spliced into the token's string/template literal with escaping for that context, so it may safely contain quotes, backticks, `${`, or backslashes.
+
+> **Tokens MUST be unique in the javascript source.** The injector locates each token by its first occurrence in the file — if a token string also appears in a comment, a log message, or any other place, injection targets that occurrence instead (and throws when it isn't inside a string/template literal). Pick tokens that can only ever appear as the replacement placeholder (e.g. `__MY_COMPONENT_TPL__`), and don't write them anywhere else in the file.
 
 ## Trusted Types Helpers
 
@@ -107,8 +127,9 @@ shadowRoot.innerHTML = trustedHtml('my-component', '<div>…static template…</
     cssPath: '/some/path/file.css',
     cssLinkHref: '//some/path/file.css',
     jsPath: '/some/path/file.js',
-    htmlPath: '/some/path/file.html',
-    jsReplacement: '__REPLACEMENT_IN_JS__',
+    templates: [
+      { name: 'index', htmlPath: '/some/path/file.html', token: '__REPLACEMENT_IN_JS__' }
+    ],
     terserOptions: { /* terser options */ },
     htmlminOptions: { /* html-minifier options */ },
     cleancssOptions: { /* clean-css options */ },
@@ -118,11 +139,12 @@ shadowRoot.innerHTML = trustedHtml('my-component', '<div>…static template…</
   
   // Retrieve processed content
   const [js, css, html] = await Promise.all([
-    result.getJs(), result.getCss(), result.getHtml()
+    result.getJs(), result.getCss(), result.html.index.getHtml()
   ]);
 
   // Retrieve output paths
-  const [jsPath, cssPath, htmlPath] = [result.jsPath, result.cssPath, result.htmlPath];
+  const [jsPath, cssPath, htmlPath] =
+    [result.jsPath, result.cssPath, result.html.index.path];
 ```
 
 ## API
@@ -132,7 +154,7 @@ build (outputDir, options): Result
 ```
 
 ### outputDir {String}, required
-Full path to the output directory where css, html, and javascript output are written.
+Full path to the output directory where css, html, and javascript output are written. The directory **must already exist** — `build()` throws upfront if it doesn't (or is not a directory), and never creates or cleans it itself. Creating it is the caller's job (`fs.mkdir(outputDir, { recursive: true })`); cleaning stale outputs between builds is up to your build pipeline too.
 
 ### Options {Object}, optional*
 \* Not really. One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They have no default, so if no options are supplied, this library throws an exception.  
@@ -148,26 +170,18 @@ Full path to the output directory where css, html, and javascript output are wri
   If supplied:
     + href will be wrapped in a `link` tag
     + resulting `link` will be prepended to the html file if `htmlPath` supplied
-    + resulting `link` will be inserted into the javascript file if no `htmlPath` supplied and `jsReplacement` and `jsPath` supplied  
+    + resulting `link` will be inserted into the javascript file if no `htmlPath` supplied and `jsReplacement` and `jsPath` supplied
   
-* **htmlPath** {String} - Full path to the input html file  
-  If supplied:  
-    + css will be prepended in a `style` tag
-    + cssLinkHref will be prepended in a `link` tag
-    + html will be inserted into the javascript file if `jsReplacement` and `jsPath` is supplied  
+* **sharedMultiTemplate** {String} - How SHARED `cssPath`/`cssLinkHref` are embedded across templates. Defaults to `"first"`: shared styles are embedded only in the first template that uses them, so several templates of one component placed into a single shadow root do not duplicate the css (later templates carry markup only). Use `"every"` to embed the shared styles in each template's output, keeping every html self-contained (needed when a template may ship alone, e.g. per-state SSR/standalone fragments). Per-template `cssPath`/`cssLinkHref` overrides are always embedded in their own template, in either mode. Any other value throws.
   
 * **jsPath** {String} - Full path to the input javascript file
-* **jsReplacement** {String|RegExp} - The replacement pattern for the css or html in the javascript file (single template). See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern) for full documentation  
-  If supplied:
-    + A replacement will be attempted in the javascript file, `jsPath` must also be supplied
-    + If **not supplied** or falsy, No replacement will be attempted and all assets are just copied to `outputDir`  
-  
 * **templates** {Array} - Zero or more templates, each an object with:  
-  * **name** {String} - Output filename without extension (`${name}.html`). Defaults to the input basename.
+  * **name** {String} - Output filename without extension (written as `${name}.html`). Defaults to the input basename.
   * **htmlPath** {String} - Full path to the input html for this template.
-  * **token** {String|RegExp} - The placeholder in the javascript to replace.
+  * **token** {String|RegExp} - The placeholder in the javascript to replace. See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern). **Must be unique in the source file** — the first occurrence is the one replaced, so a token string mentioned in a comment or other literal redirects injection there.
+  * **cssPath** {String} - Optional per-template css override (falls back to the shared `cssPath`).
   * **cssLinkHref** {String} - Optional per-template link href override (falls back to the shared `cssLinkHref`).  
-  When supplied, takes precedence over the flat `htmlPath`/`jsReplacement` options. Shared `cssPath`/`cssLinkHref` are applied to every template. Duplicate resolved output names throw.
+  Shared `cssPath`/`cssLinkHref` follow the `sharedMultiTemplate` mode: embedded in the first template that uses them by default (`"first"`), or in every template when `sharedMultiTemplate: "every"`. Per-template overrides are always embedded in their own template. A token with no `jsPath` throws, as do duplicate resolved output names and invalid `sharedMultiTemplate` values. The flat `htmlPath`/`jsReplacement` options were removed in v4 and now throw a migration error.
   
 * **terserOptions** {Object} - The [javascript minifier options](https://github.com/terser/terser/blob/master/README.md#minify-options) object  
   Defaults:
@@ -201,17 +215,13 @@ The output of the build process. Allows access to the output paths and full outp
   
   + **cssPath** {String}, The full path to the output css  
   
-  + **htmlPath** {String}, The full path to the output html  
-  
   + **jsPath** {String}, The full path to the output javascript  
   
   + **getCss** {asyncFunction}, gets the output css  
   
-  + **getHtml** {asyncFunction}, gets the output html  
-  
   + **getJs** {asyncFunction}, gets the output javascript  
   
-  + **htmls** {Array}, ordered list (matching `templates` input order) of `{ name, path, getHtml }` — one entry per html template. `getHtml()`/`htmlPath` above are shorthands for the first entry.
+  + **html** {Object}, A map keyed by template name. Each entry: `{ name, path, getHtml }` where `path` is the full path to that template's output html and `getHtml` (async) returns its content.
   
 ## License
   * [BSD-3 Clasuse, Alex Grant, LocalNerve](LICENSE.md)

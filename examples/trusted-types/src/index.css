@@ -1,0 +1,16 @@
+.comment-list {
+  font-family: system-ui, sans-serif;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.comment-list li {
+  padding: 0.375rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.comment-list .author {
+  font-weight: 600;
+  color: #0969da;
+}

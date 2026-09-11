@@ -133,10 +133,6 @@ async function makeSpecs (fixtures, outputDirBase) {
 
     fs.mkdir(outputDir, { recursive: true });
 
-    if (fixture.jsReplacement) {
-      spec.options.jsReplacement = jsReplacementToken;
-    }
-
     if(fixtureName.includes('passthru')) {
       spec.options.minifySkip = true;
     }
@@ -156,37 +152,50 @@ async function makeSpecs (fixtures, outputDirBase) {
   
     if (fixture.types.includes('link')) {
       link = fixture.link.fileContent;
-      const m = link.match(/href="(?<href>[^"]+)"/);
-      spec.options.cssLinkHref = m?.groups?.href;
-    }
-  
-    if (fixture.types.includes('html')) {
-      spec.options.htmlPath = fixture.html.filePath;
-      const $ = cheerio.load(fixture.html.fileContent);
-      if (spec.output.css) {
-        $('body').prepend(`<style>${spec.output.css}</style>`);
-      }
-      if (link) {
-        $('body').prepend(link);
-      }
-      spec.output.html = await fixture.minifiers.html($('body').html());
-      spec.output.htmlPath =
-        path.join(outputDir, path.basename(fixture.html.filePath));
     }
 
-    if (fixture.jsReplacement) {
-      let payload;
-      if (spec.output.html) {
-        payload = spec.output.html;
-      } else if (spec.output.css) {
-        payload = `<style>${spec.output.css}</style>`;
-      } else if (link) {
-        payload = link;
+    // v4: express html + token as a single-element templates entry (or an
+    // html-only entry when there is no token). Pure js/css fixtures get none.
+    const hasHtmlFixture = fixture.types.includes('html');
+    if (hasHtmlFixture || fixture.jsReplacement) {
+      const htmlName = hasHtmlFixture ? 'index' : 'template-0';
+      const linkHref = link
+        ? (link.match(/href="(?<href>[^"]+)"/) || {}).groups?.href
+        : undefined;
+      spec.options.templates = [{
+        name: htmlName,
+        htmlPath: hasHtmlFixture ? fixture.html.filePath : undefined,
+        token: fixture.jsReplacement ? jsReplacementToken : undefined,
+        cssLinkHref: linkHref
+      }];
+      spec.output.htmlName = htmlName;
+
+      if (hasHtmlFixture) {
+        const $ = cheerio.load(fixture.html.fileContent);
+        if (spec.output.css) {
+          $('body').prepend(`<style>${spec.output.css}</style>`);
+        }
+        if (link) {
+          $('body').prepend(link);
+        }
+        spec.output.html = await fixture.minifiers.html($('body').html());
+        spec.output.htmlPath = path.join(outputDir, `${htmlName}.html`);
       }
-      if (payload !== undefined) {
-        jsStage = injectTokens(
-          fixture.js.fileContent, [{ pattern: jsReplacementToken, payload }]
-        );
+
+      if (fixture.jsReplacement) {
+        let payload;
+        if (spec.output.html) {
+          payload = spec.output.html;
+        } else if (spec.output.css) {
+          payload = `<style>${spec.output.css}</style>`;
+        } else if (link) {
+          payload = link;
+        }
+        if (payload !== undefined) {
+          jsStage = injectTokens(
+            fixture.js.fileContent, [{ pattern: jsReplacementToken, payload }]
+          );
+        }
       }
     }
 
@@ -213,12 +222,10 @@ async function verify (name, outputDir, options, output) {
     throw e;
   }
 
-  const [css, html, js] = await Promise.all([
-    result.getCss(),
-    result.getHtml(),
-    result.getJs()
-  ]);
-  
+  const [css, js] = await Promise.all([result.getCss(), result.getJs()]);
+  const htmlEntry = output.htmlName ? result.html[output.htmlName] : undefined;
+  const html = htmlEntry ? await htmlEntry.getHtml() : undefined;
+
   // compare html embedded css with css fragment
   if (html) {
     const m = /<style>(?<htmlcss>[^<]+)/mg.exec(html);
@@ -235,7 +242,9 @@ async function verify (name, outputDir, options, output) {
   assert.ok(name.includes('html') ? html !== undefined : html === undefined);
 
   assert.strictEqual(result.cssPath, output.cssPath);
-  assert.strictEqual(result.htmlPath, output.htmlPath);
+  if (output.htmlPath) {
+    assert.strictEqual(htmlEntry.path, output.htmlPath);
+  }
   assert.strictEqual(result.jsPath, output.jsPath);
 }
 
@@ -247,16 +256,29 @@ describe('web-component-build', async () => {
     await fs.rm(outputDir, { recursive: true, force: true });
   });
 
-  test('no args', async () => {
-    await assert.rejects(build, /Did you forget something/);
+  test('no args throws', async () => {
+    await assert.rejects(build(), /Did you forget something/);
   });
 
-  test('jsReplacement without jsPath', async () => {
+  test('non-array templates throws', async () => {
+    await assert.rejects(
+      build('some/path', { jsPath: 'x.js', templates: 'nope' }),
+      /must be an array/
+    );
+  });
+
+  test('flat htmlPath/jsReplacement options are removed in v4', async () => {
     await assert.rejects(async () => {
       await build('some/path', {
         cssPath: 'some/path/to/file.css',
         jsReplacement: 'somereplacement'
       });
+    }, /removed the flat/);
+  });
+
+  test('token without jsPath throws', async () => {
+    await assert.rejects(async () => {
+      await build('some/path', { templates: [{ token: '__X__' }] });
     }, /Did you forget 'jsPath'/);
   });
 

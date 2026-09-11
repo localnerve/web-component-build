@@ -10,6 +10,7 @@ Assembles a web component from its parts, allows developers to author the compon
 The parts are processed and written to an output directory, then exposed to a calling build process.  
 
   * [Why This Exists](#why-this-exists)
+  * [Examples](#examples)
   * [Processing Possibilities](#processing-map)
   * [Multiple Templates](#multiple-templates)
   * [Trusted Types Helpers](#trusted-types-helpers)
@@ -23,6 +24,21 @@ The parts are processed and written to an output directory, then exposed to a ca
   2. Expose CSS for the web component to builds for computing [CSP hashes](https://github.com/localnerve/csp-hashes#readme)
   3. Expose HTML for the web component to builds for companion templates and/or DSD for SSR builds
   4. Enable/ease paying these conveniences forward in web component distribution packages
+
+## Examples
+New here? The [`examples/`](./examples/) directory has seven self-contained examples — each with its own fixtures, build script, and README — covering the most common ways to build a web component with this library. Clone the repo and run any one from the root:
+
+```bash
+node examples/js-css-html/build.mjs   # the canonical js + css + html build
+```
+
+  * [js-css-html](./examples/js-css-html/) — minified css + html injected into a JS token; all three outputs written
+  * [pure-js](./examples/pure-js/) — javascript-only components (no templates)
+  * [pure-css](./examples/pure-css/) — minify a stylesheet for distribution / CSP hashes
+  * [inline-style-no-html](./examples/inline-style-no-html/) — css injected as a bare `<style>` payload, no html file
+  * [link-href](./examples/link-href/) — reference an external stylesheet with a `<link>` tag instead of inlining css
+  * [multi-template](./examples/multi-template/) — several authored states (default / empty / error) and the `sharedMultiTemplate` option, with a renderable demo page
+  * [trusted-types](./examples/trusted-types/) — components authored against the Trusted Types helpers, with an XSS-probe demo
 
 ## Processing Map
 The following is a table of _some_ of the possible input, processing, and output combos. See [options](#options-object-optional) for detailed explanations.
@@ -63,6 +79,8 @@ Each entry takes `name` (output filename, defaults to the input basename), `html
 > By default (`sharedMultiTemplate: "first"`) the shared `cssPath`/`cssLinkHref` are embedded only in the **first** template that uses them, so several templates of one component placed into a single shadow root do not duplicate the css. Set `sharedMultiTemplate: "every"` to embed the shared styles in each template's output instead, keeping every html self-contained (needed when a template may ship alone, e.g. per-state SSR or standalone fragments). Per-template `cssPath`/`cssLinkHref` overrides are always embedded in their own template.
 
 > Injection is **syntax-aware**: markup is spliced into the token's string/template literal with escaping for that context, so it may safely contain quotes, backticks, `${`, or backslashes.
+
+> **Tokens MUST be unique in the javascript source.** The injector locates each token by its first occurrence in the file — if a token string also appears in a comment, a log message, or any other place, injection targets that occurrence instead (and throws when it isn't inside a string/template literal). Pick tokens that can only ever appear as the replacement placeholder (e.g. `__MY_COMPONENT_TPL__`), and don't write them anywhere else in the file.
 
 ## Trusted Types Helpers
 
@@ -136,7 +154,7 @@ build (outputDir, options): Result
 ```
 
 ### outputDir {String}, required
-Full path to the output directory where css, html, and javascript output are written.
+Full path to the output directory where css, html, and javascript output are written. The directory **must already exist** — `build()` throws upfront if it doesn't (or is not a directory), and never creates or cleans it itself. Creating it is the caller's job (`fs.mkdir(outputDir, { recursive: true })`); cleaning stale outputs between builds is up to your build pipeline too.
 
 ### Options {Object}, optional*
 \* Not really. One or more of `cssPath`, `jsPath`, and/or `htmlPath` **must** be supplied. They have no default, so if no options are supplied, this library throws an exception.  
@@ -160,7 +178,7 @@ Full path to the output directory where css, html, and javascript output are wri
 * **templates** {Array} - Zero or more templates, each an object with:  
   * **name** {String} - Output filename without extension (written as `${name}.html`). Defaults to the input basename.
   * **htmlPath** {String} - Full path to the input html for this template.
-  * **token** {String|RegExp} - The placeholder in the javascript to replace. See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern).
+  * **token** {String|RegExp} - The placeholder in the javascript to replace. See [pattern](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#pattern). **Must be unique in the source file** — the first occurrence is the one replaced, so a token string mentioned in a comment or other literal redirects injection there.
   * **cssPath** {String} - Optional per-template css override (falls back to the shared `cssPath`).
   * **cssLinkHref** {String} - Optional per-template link href override (falls back to the shared `cssLinkHref`).  
   Shared `cssPath`/`cssLinkHref` follow the `sharedMultiTemplate` mode: embedded in the first template that uses them by default (`"first"`), or in every template when `sharedMultiTemplate: "every"`. Per-template overrides are always embedded in their own template. A token with no `jsPath` throws, as do duplicate resolved output names and invalid `sharedMultiTemplate` values. The flat `htmlPath`/`jsReplacement` options were removed in v4 and now throw a migration error.

@@ -194,6 +194,8 @@ Full path to the output directory where css, html, and javascript output are wri
   
 * **minifySkip** {Boolean} - True to skip all minifications, defaults to false  
 
+* **deprecationWarnings** {Boolean} - False to disable deprecation warnings, defaults to true. If omitted, deprecation warnings are suppressed by defining environment variable `WEB_COMPONENT_BUILD_NO_DEPRECATION_WARNINGS`
+
 ### Result {Object}
 The output of the build process. Allows access to the output paths and full output content. Format:  
   

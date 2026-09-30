@@ -1,6 +1,6 @@
 {
   "name": "@localnerve/web-component-build",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "A library to help build web components",
   "main": "index.js",
   "type": "module",
@@ -63,10 +63,10 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.11.0",
-    "eslint-plugin-n": "^18.3.0",
+    "eslint-plugin-n": "^18.4.0",
     "globals": "^17.12.0",
     "he": "^1.2.0",
-    "jsdom": "^30.1.0",
+    "jsdom": "^30.1.1",
     "tempy": "^3.2.0"
   },
   "overrides": {

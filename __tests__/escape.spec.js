@@ -9,7 +9,7 @@
 
 import { describe, test } from 'node:test';
 import assert from 'node:assert';
-import he from 'he';
+import * as he from 'he';
 import { escapeHtml } from '../lib/browser/trusted-types.js';
 
 // Shared vector: every case here must also appear in tt-bootstrap's escape tests so the
